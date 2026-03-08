@@ -3,26 +3,26 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useAuth } from './context/AuthContext'; 
 import { useTheme } from './context/ThemeContext'; 
 
+// --- SECURITY & CORE ---
+import FinalSecurityShield from './security/FinalSecurityShield'; // ہیکنگ اور غیر قانونی رسائی سے بچاؤ
+import AppShell from './AppShell'; // ماسٹر لے آؤٹ جس میں ہیڈر اور سائیڈ بار شامل ہے
+
 // --- LAYOUTS ---
-import WebsiteLayout from './website/WebsiteLayout'; // ویب سائٹ کا ڈھانچہ
-import Layout from './components/Layout';           // سپر ایپ کا ڈھانچہ
+import WebsiteLayout from './website/WebsiteLayout'; 
 
-// --- WEBSITE PAGES (Lazy Loaded) ---
+// --- LAZY LOADED PAGES ---
 const HomePage = lazy(() => import('./website/pages/HomePage'));
-const InvestPage = lazy(() => import('./website/pages/InvestPage'));
-const AdsPage = lazy(() => import('./website/pages/AdsPage'));
-const FeaturesPage = lazy(() => import('./website/pages/FeaturesPage'));
-
-// --- APP SCREENS (Lazy Loaded) ---
-const HomeScreen = lazy(() => import('./screens/HomeScreen'));
 const AdminDashboard = lazy(() => import('./screens/Admin/AdminDashboard'));
+const InventoryManager = lazy(() => import('./components/Admin/InventoryManager')); // آپ کا نیا پروڈکٹ فارم
 const Login = lazy(() => import('./screens/Auth/Login'));
+const HomeScreen = lazy(() => import('./screens/HomeScreen'));
 
-// لوڈنگ اسکرین
+// پریمیم لوڈنگ اسکرین
 const LoadingScreen = () => (
-  <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#050505', color: '#D4AF37' }}>
-    <div className="tezro-spinner"></div>
-    <p style={{ marginLeft: '10px', fontWeight: 'bold', letterSpacing: '2px' }}>TEZRO SECURE LOADING...</p>
+  <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#050505', color: '#D4AF37' }}>
+    <div className="tezro-spinner" style={{ width: '50px', height: '50px', border: '3px solid #333', borderTop: '3px solid #D4AF37', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+    <p style={{ marginTop: '20px', fontWeight: 'bold', letterSpacing: '4px', fontSize: '12px' }}>🛡️ TEZRO ENCRYPTED SESSION</p>
+    <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
   </div>
 );
 
@@ -34,54 +34,58 @@ const App = () => {
 
   return (
     <Router>
-      <Suspense fallback={<LoadingScreen />}>
-        <div style={{ background: colors?.bg || '#050505', minHeight: '100vh' }}>
-          <Routes>
-            
-            {/* 🌐 SECTION 1: MAIN WEBSITE (Public) */}
-            {/* یہ تمام صفحات tezro.com/ پر براہ راست نظر آئیں گے */}
-            <Route element={<WebsiteLayout />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/invest" element={<InvestPage />} />
-              <Route path="/ads" element={<AdsPage />} />
-              <Route path="/features" element={<FeaturesPage />} />
-              <Route path="/about" element={<div>About Tezro</div>} />
-              <Route path="/contact" element={<div>Contact Us</div>} />
-            </Route>
+      <FinalSecurityShield> {/* پورے پلیٹ فارم پر کڑی نگرانی */}
+        <Suspense fallback={<LoadingScreen />}>
+          <div style={{ background: colors?.bg || '#050505', minHeight: '100vh' }}>
+            <Routes>
+              
+              {/* 🌐 ویب سائٹ سیکشن (Public) */}
+              <Route element={<WebsiteLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/invest" element={lazy(() => import('./website/pages/InvestPage'))} />
+                <Route path="/features" element={lazy(() => import('./website/pages/FeaturesPage'))} />
+              </Route>
 
-            {/* 🔐 SECTION 2: AUTHENTICATION */}
-            <Route path="/login" element={!user ? <Login /> : <Navigate to="/app" />} />
+              {/* 🔐 تصدیق (Authentication) */}
+              <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
 
-            {/* 📱 SECTION 3: SUPER APP (Private/Protected) */}
-            {/* یہ حصہ صرف لاگ ان صارفین کے لیے tezro.com/app پر ہوگا */}
-            <Route 
-              path="/app/*" 
-              element={user ? (
-                <Layout>
+              {/* 🛡️ ماسٹر ایڈمن پینل (Protected) */}
+              <Route 
+                path="/dashboard/*" 
+                element={user && role === 'admin' ? (
+                  <AppShell> {/* یہاں ہیڈر اور مینیو خود بخود نظر آئیں گے */}
+                    <Routes>
+                      <Route index element={<AdminDashboard />} />
+                      <Route path="inventory" element={<InventoryManager theme={colors} />} />
+                      <Route path="finance" element={<div>Vault Ledger Control</div>} />
+                      <Route path="users" element={<div>User Management</div>} />
+                    </Routes>
+                  </AppShell>
+                ) : (
+                  <Navigate to="/login" />
+                )} 
+              />
+
+              {/* 📱 سپر ایپ انٹرفیس (Protected) */}
+              <Route 
+                path="/app/*" 
+                element={user ? (
                   <Routes>
                     <Route index element={<HomeScreen />} />
-                    {/* ایپ کے دیگر صفحات یہاں آئیں گے */}
-                    <Route path="profile" element={<div>User Profile</div>} />
-                    <Route path="banking" element={<div>Tezro Vault</div>} />
-                    
-                    {/* ایڈمن پینل (صرف ایڈمن کے لیے) */}
-                    <Route 
-                      path="admin" 
-                      element={role === 'admin' ? <AdminDashboard /> : <Navigate to="/app" />} 
-                    />
+                    <Route path="banking" element={<div>Tezro Pay</div>} />
                   </Routes>
-                </Layout>
-              ) : (
-                <Navigate to="/login" />
-              )} 
-            />
+                ) : (
+                  <Navigate to="/login" />
+                )} 
+              />
 
-            {/* 404 Redirect */}
-            <Route path="*" element={<Navigate to="/" />} />
+              {/* 404 ری ڈائریکٹ */}
+              <Route path="*" element={<Navigate to="/" />} />
 
-          </Routes>
-        </div>
-      </Suspense>
+            </Routes>
+          </div>
+        </Suspense>
+      </FinalSecurityShield>
     </Router>
   );
 };
