@@ -88,7 +88,6 @@ const AdminDashboard = () => {
       <div style={styles.tabContainer}>
         {[
           { id: 'Overview', icon: '📊', label: 'Monitor' },
-          { id: 'Inventory', icon: '📦', label: 'Products' },
           { id: 'Approvals', icon: '🛡️', label: `Verifications (${pendingApprovals})` },
           { id: 'Control', icon: '⚙️', label: 'Rules' },
         ].map((item) => (
