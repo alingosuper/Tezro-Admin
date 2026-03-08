@@ -1,3 +1,31 @@
+useEffect(() => {
+  console.group("🛡️ Tezro Security Audit & Diagnostics");
+  
+  // 1. چیک کریں کہ کیا لوکل لاک ایکٹو ہے
+  const lockStatus = localStorage.getItem('TEZRO_LOCAL_LOCK');
+  console.log("Device Lock Status:", lockStatus === 'TRUE' ? "🔴 LOCKED" : "🟢 SECURE");
+
+  // 2. چیک کریں کہ کیا کوئی پرانی انوینٹری یا بزنس فائل میموری میں ہے
+  const suspiciousFiles = [
+    'InventoryManager', 
+    'HotelRegCard', 
+    'BusinessRegistration'
+  ];
+  
+  // یہ چیک کرے گا کہ کیا ونڈو آبجیکٹ میں کوئی غیر متعلقہ ڈیٹا تو نہیں
+  suspiciousFiles.forEach(file => {
+    if (window[file]) {
+      console.warn(`⚠️ Warning: Suspicious legacy file detected in memory: ${file}`);
+    }
+  });
+
+  // 3. راؤٹ مانیٹرنگ
+  console.log("Current Path:", window.location.pathname);
+  console.log("User Role:", role || "Not Authenticated");
+
+  console.groupEnd();
+}, [role]);
+
 import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext'; 
