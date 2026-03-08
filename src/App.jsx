@@ -23,7 +23,8 @@ const App = () => {
   const { user, role, loading } = useAuth();
   const { colors } = useTheme();
   const shieldRef = useRef(null); // شیلڈ کے فنکشنز استعمال کرنے کے لیے
-  
+  const WebsiteLayout = lazy(() => import('./website/WebsiteLayout'));
+
   const [isDeviceSecure, setIsDeviceSecure] = useState(true);
   const [isDistressed, setIsDistressed] = useState(false); // 🚨 اسٹریس/گوسٹ موڈ سٹیٹ
 
@@ -52,11 +53,10 @@ const App = () => {
               <Routes> 
 {/* 🌐 پبلک زون کا درست طریقہ */}
 <Route path="/" element={<WebsiteLayout />}>
-  // HomePage کی جگہ یہ عارضی لائن لکھیں
-  <Route index element={<div style={{padding: '100px', color: 'red'}}>ہیلو! یہ ہوم پیج ہے</div>} /> <Route path="invest" element={<InvestPage />} />
+  <Route index element={<HomePage />} /> {/* یہ اب صحیح کام کرے گا */}
+  <Route path="invest" element={<InvestPage />} />
   <Route path="features" element={<FeaturesPage />} />
-</Route>
-                
+</Route>      
                 <Route path="/login" element={!user ? <Login /> : <Navigate to={role === 'admin' ? "/admin" : "/app"} />} />
 
                 {/* 🛡️ ایڈمن زون - یہاں گوسٹ ڈیٹا کا سوئچ کام کرے گا */}
