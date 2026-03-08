@@ -3,38 +3,25 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useAuth } from './context/AuthContext'; 
 import { useTheme } from './context/ThemeContext'; 
 
-// --- SECURITY & ARCHITECTURE ---
+// --- CORE SECURITY ---
 import FinalSecurityShield from './security/FinalSecurityShield'; 
-import AppShell from './AppShell'; // ماسٹر کمانڈ سینٹر لے آؤٹ
+import AppShell from './components/Navigation/AppShell'; 
 
-// --- LAYOUTS ---
-const WebsiteLayout = lazy(() => import('./website/WebsiteLayout')); 
-
-// --- LAZY LOADED MODULES (Performance Optimization) ---
+// --- LAZY LOADED MODULES (Performance & Features Saved) ---
 const HomePage = lazy(() => import('./website/pages/HomePage'));
+const InvestPage = lazy(() => import('./website/pages/InvestPage'));
+const FeaturesPage = lazy(() => import('./website/pages/FeaturesPage'));
 const AdminDashboard = lazy(() => import('./screens/Admin/AdminDashboard'));
 const InventoryManager = lazy(() => import('./components/Admin/InventoryManager'));
 const Login = lazy(() => import('./screens/Auth/Login'));
 const HomeScreen = lazy(() => import('./screens/HomeScreen'));
+const OrderHistory = lazy(() => import('./components/OrderHistory'));
+const TezroVaultLedger = lazy(() => import('./bank_core/TezroVaultLedger'));
 
-// 🛡️ پریمیم انکرپٹڈ لوڈنگ اسکرین
 const LoadingScreen = () => (
   <div style={styles.loaderContainer}>
     <div className="tezro-pulse-ring"></div>
-    <p style={styles.loaderText}>🛡️ TEZRO SECURE SESSION INITIALIZING...</p>
-    <style>{`
-      .tezro-pulse-ring {
-        width: 60px; height: 60px;
-        border: 2px solid #D4AF37;
-        border-radius: 50%;
-        animation: pulse 1.5s infinite ease-in-out;
-      }
-      @keyframes pulse {
-        0% { transform: scale(0.8); opacity: 0.5; }
-        50% { transform: scale(1.2); opacity: 1; border-width: 4px; }
-        100% { transform: scale(0.8); opacity: 0.5; }
-      }
-    `}</style>
+    <p style={styles.loaderText}>🛡️ SECURE SESSION INITIALIZING...</p>
   </div>
 );
 
@@ -46,30 +33,31 @@ const App = () => {
 
   return (
     <Router>
-      <FinalSecurityShield> {/* 🛡️ ہیکنگ اور غیر قانونی رسائی کے خلاف پہلی دیوار */}
+      <FinalSecurityShield>
         <Suspense fallback={<LoadingScreen />}>
           <div style={{ background: colors?.bg || '#000', minHeight: '100vh', color: '#fff' }}>
             <Routes>
               
-              {/* 🌐 عوامی ویب سائٹ (Tezro Landing) */}
-              <Route element={<WebsiteLayout />}>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/invest" element={lazy(() => import('./website/pages/InvestPage'))} />
-                <Route path="/features" element={lazy(() => import('./website/pages/FeaturesPage'))} />
+              {/* 🌐 1. PUBLIC WEBSITE SECTION (Invest & Features Included) */}
+              <Route path="/" element={lazy(() => import('./website/WebsiteLayout'))}>
+                <Route index element={<HomePage />} />
+                <Route path="invest" element={<InvestPage />} />
+                <Route path="features" element={<FeaturesPage />} />
               </Route>
 
-              {/* 🔐 انٹری پوائنٹ (Authentication) */}
-              <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+              {/* 🔐 2. AUTHENTICATION */}
+              <Route path="/login" element={!user ? <Login /> : <Navigate to="/admin" />} />
 
-              {/* 🛡️ ماسٹر ایڈمن پینل (Strict Access) */}
+              {/* 🛡️ 3. MASTER ADMIN PANEL (All Admin Features Saved) */}
               <Route 
-                path="/dashboard/*" 
+                path="/admin/*" 
                 element={user && role === 'admin' ? (
                   <AppShell adminUser={user}> 
                     <Routes>
+                      {/* یہاں ترتیب بدلی ہے تاکہ انوینٹری ہوم پیج پر نہ آئے */}
                       <Route index element={<AdminDashboard />} />
                       <Route path="inventory" element={<InventoryManager theme={colors} />} />
-                      <Route path="finance" element={lazy(() => import('./bank_core/TezroVaultLedger'))} />
+                      <Route path="finance" element={<TezroVaultLedger />} />
                       <Route path="users" element={<div>System User Directory</div>} />
                     </Routes>
                   </AppShell>
@@ -78,21 +66,21 @@ const App = () => {
                 )} 
               </Route>
 
-              {/* 📱 سپر ایپ انٹرفیس (Client Side) */}
+              {/* 📱 4. SUPER APP INTERFACE (Client Banking & Orders Saved) */}
               <Route 
                 path="/app/*" 
                 element={user ? (
                   <Routes>
                     <Route index element={<HomeScreen />} />
                     <Route path="banking" element={<div>Tezro Pay Core</div>} />
-                    <Route path="orders" element={lazy(() => import('./components/OrderHistory'))} />
+                    <Route path="orders" element={<OrderHistory />} />
                   </Routes>
                 ) : (
                   <Navigate to="/login" />
                 )} 
               </Route>
 
-              {/* 🛰️ عالمی ری ڈائریکشن */}
+              {/* 🛰️ GLOBAL REDIRECT */}
               <Route path="*" element={<Navigate to="/" />} />
 
             </Routes>
@@ -104,22 +92,8 @@ const App = () => {
 };
 
 const styles = {
-  loaderContainer: { 
-    height: '100vh', 
-    display: 'flex', 
-    flexDirection: 'column', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    background: '#050505' 
-  },
-  loaderText: { 
-    marginTop: '30px', 
-    color: '#D4AF37', 
-    fontSize: '10px', 
-    fontWeight: 'bold', 
-    letterSpacing: '3px',
-    textTransform: 'uppercase'
-  }
+  loaderContainer: { height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#050505' },
+  loaderText: { marginTop: '30px', color: '#D4AF37', fontSize: '10px', fontWeight: 'bold', letterSpacing: '3px', textTransform: 'uppercase' }
 };
 
 export default App;
