@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Alingo Admin - کنٹرول پینل</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-md mx-auto bg-white p-6 rounded-xl shadow-lg">
+        <h2 class="text-2xl font-bold mb-6 text-center text-blue-700">نئی پروڈکٹ شامل کریں</h2>
+        
+        <div class="space-y-4">
+            <input type="text" id="pName" placeholder="نام (مثلاً چکن بریانی)" class="w-full p-2 border rounded">
+            <input type="number" id="pPrice" placeholder="قیمت (Rs.)" class="w-full p-2 border rounded">
+            <select id="pCat" class="w-full p-2 border rounded">
+                <option value="food">کھانا</option>
+                <option value="grocery">گروسری</option>
+            </select>
+            <button onclick="saveProduct()" class="w-full bg-green-600 text-white py-2 rounded font-bold">ایپ پر اپلوڈ کریں</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script>
+        // یہاں بھی وہی Firebase Config آئے گی جو script.js میں ہے
+        function saveProduct() {
+            alert("Firebase کنیکٹ کرنے کے بعد یہ بٹن کام کرے گا!");
+        }
+    </script>
+</body>
+</html>
