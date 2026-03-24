@@ -1,107 +1,78 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../../firebase';
-import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { loadAIModels, matchFaces } from '../../utils/AIFaceMatcher';
 
 const RegistrationRequests = () => {
   const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [aiResults, setAiResults] = useState({});
 
   useEffect(() => {
-    // ریئل ٹائم لسنر - صرف پینڈنگ درخواستیں
-    const q = query(
-      collection(db, "registrations"), 
-      where("status", "==", "pending")
-    );
+    // ماڈلز لوڈ کریں
+    loadAIModels();
 
+    const q = query(collection(db, "registrations"), where("status", "==", "pending"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setRequests(data);
-      setLoading(false);
-    }, (error) => {
-      console.error("Firestore Error:", error);
-      setLoading(false);
+      setRequests(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
-
     return () => unsubscribe();
   }, []);
 
-  const handleApprove = async (id, name) => {
-    try {
-      const userRef = doc(db, "registrations", id);
-      await updateDoc(userRef, { 
-        status: "approved",
-        approvedAt: serverTimestamp(),
-        message: "Welcome to Tezro! Your account is now active."
-      });
-      alert(`✅ ${name} has been approved successfully!`);
-    } catch (error) {
-      alert("❌ Error approving user: " + error.message);
-    }
+  // AI چیک کرنے کا فنکشن
+  const checkAI = async (id, selfieUrl, cnicUrl) => {
+    setAiResults(prev => ({ ...prev, [id]: { message: "🔄 AI چیک کر رہا ہے..." } }));
+    const result = await matchFaces(selfieUrl, cnicUrl);
+    setAiResults(prev => ({ ...prev, [id]: result }));
   };
 
-  if (loading) return <div style={{color: '#eab308', textAlign: 'center', marginTop: '50px'}}>Loading Requests...</div>;
+  const handleApprove = async (id) => {
+    await updateDoc(doc(db, "registrations", id), { status: "approved", securityVerified: true });
+    alert("✅ صارف منظور کر لیا گیا!");
+  };
 
   return (
-    <div style={{ padding: '25px', color: 'white', backgroundColor: '#041208', minHeight: '100vh' }}>
-      <h2 style={{ borderBottom: '2px solid #eab308', paddingBottom: '10px', color: '#eab308' }}>
-        🛡️ Tezro Admin: Registration Requests
-      </h2>
+    <div style={{ padding: '20px', color: 'white', backgroundColor: '#041208' }}>
+      <h2 style={{color: '#eab308'}}>🛡️ Tezro AI + Manual Verification</h2>
       
-      {requests.length === 0 ? (
-        <p style={{ textAlign: 'center', marginTop: '20px', color: 'gray' }}>No pending requests found.</p>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', marginTop: '20px' }}>
-          {requests.map(req => (
-            <div key={req.id} style={{ 
-              background: 'rgba(234, 179, 8, 0.05)', 
-              border: '1px solid rgba(234, 179, 8, 0.3)', 
-              padding: '20px', 
-              borderRadius: '15px',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                <img src={req.photoUrl || 'https://via.placeholder.com/100'} alt="Profile" 
-                  style={{ width: '80px', height: '80px', borderRadius: '12px', objectFit: 'cover', border: '2px solid #eab308' }} 
-                />
-                <div>
-                  <h3 style={{ margin: '0', color: '#eab308' }}>{req.name}</h3>
-                  <span style={{ fontSize: '12px', background: '#eab308', color: 'black', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
-                    {req.role?.toUpperCase()}
-                  </span>
-                </div>
-              </div>
+      {requests.map(req => (
+        <div key={req.id} style={cardStyle}>
+          <p><strong>Name:</strong> {req.name} ({req.category})</p>
+          <p><strong>Phone:</strong> {req.phone}</p>
+          
+          {/* سیلفی اور شناختی کارڈ آمنے سامنے */}
+          <div style={{ display: 'flex', gap: '15px', margin: '15px 0' }}>
+            <img src={req.selfieUrl} alt="Selfie" style={imgStyle} />
+            <img src={req.cnicFrontUrl} alt="CNIC" style={imgStyle} />
+          </div>
 
-              <div style={{ marginTop: '15px', fontSize: '14px', color: '#ccc' }}>
-                <p style={{ margin: '5px 0' }}>📍 <strong>City:</strong> {req.city}</p>
-                <p style={{ margin: '5px 0' }}>📞 <strong>Phone:</strong> {req.phone || 'N/A'}</p>
-                <p style={{ margin: '5px 0' }}>📅 <strong>Applied:</strong> {req.createdAt?.toDate().toLocaleDateString() || 'Recent'}</p>
-              </div>
-
-              <button 
-                onClick={() => handleApprove(req.id, req.name)}
-                style={{ 
-                  width: '100%', 
-                  backgroundColor: '#eab308', 
-                  color: 'black', 
-                  padding: '12px', 
-                  border: 'none', 
-                  borderRadius: '8px', 
-                  marginTop: '15px', 
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: '0.3s'
-                }}
-                onMouseOver={(e) => e.target.style.opacity = '0.8'}
-                onMouseOut={(e) => e.target.style.opacity = '1'}
-              >
-                APPROVE ACCESS
+          {/* AI رزلٹ */}
+          <div style={aiStatusStyle}>
+            {aiResults[req.id] ? (
+              <p style={{ color: aiResults[req.id].safe ? '#4ade80' : '#f87171' }}>
+                {aiResults[req.id].message}
+              </p>
+            ) : (
+              <button onClick={() => checkAI(req.id, req.selfieUrl, req.cnicFrontUrl)} style={aiBtn}>
+                AI سے تصدیق کریں 🤖
               </button>
-            </div>
-          ))}
+            )}
+          </div>
+
+          {/* مینیول منظوری */}
+          <button onClick={() => handleApprove(req.id)} style={approveBtn}>
+            حتمی منظوری دیں (Manual)
+          </button>
         </div>
-      )}
+      ))}
     </div>
   );
 };
+
+// سٹائلنگ
+const cardStyle = { border: '1px solid #FFD700', padding: '20px', borderRadius: '15px', marginBottom: '20px', background: '#111' };
+const imgStyle = { width: '120px', height: '120px', borderRadius: '10px', objectFit: 'cover', border: '2px solid #333' };
+const aiStatusStyle = { background: '#222', padding: '10px', borderRadius: '8px', margin: '10px 0', border: '1px dashed #FFD700' };
+const aiBtn = { background: 'none', border: 'none', color: '#FFD700', cursor: 'pointer', fontWeight: 'bold' };
+const approveBtn = { width: '100%', backgroundColor: '#FFD700', color: '#000', padding: '10px', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' };
 
 export default RegistrationRequests;
