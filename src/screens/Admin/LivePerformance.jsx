@@ -1,45 +1,81 @@
-import React, { useEffect, useState } from 'react';
-import { getAnalytics, setAnalyticsCollectionEnabled } from 'firebase/analytics';
-import { app } from '../../firebase'; // آپ کی ایڈمن فائر بیس کنفگ
+import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import { db } from '../../firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
+import L from 'leaflet';
+
+// کسٹم مارکر آئیکن (ڈرائیور کے لیے)
+const driverIcon = new L.Icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854184.png',
+    iconSize: [35, 35],
+});
 
 const LivePerformance = () => {
-  const [logs, setLogs] = useState([]);
-  const [systemStatus, setSystemStatus] = useState("SECURE");
+  const [activeDrivers, setActiveDrivers] = useState([]);
+  const [isShieldActive, setIsShieldActive] = useState(true);
 
   useEffect(() => {
-    // یہاں ہم فرض کر رہے ہیں کہ آپ Analytics یا Realtime DB سے ڈیٹا لے رہے ہیں
-    console.log("🛡️ Watchtower Active: Monitoring User App signals...");
-    
-    // سیکیورٹی کے لیے ایک فرضی مانیٹرنگ فنکشن
-    const fetchSecurityLogs = () => {
-      const newLog = {
-        id: Date.now(),
-        event: "HEARTBEAT_RECEIVED",
-        origin: "USER_APP",
-        time: new Date().toLocaleTimeString(),
-        status: "OK"
-      };
-      setLogs(prev => [newLog, ...prev].slice(0, 10)); // صرف آخری 10 لاگز دکھائیں
-    };
+    // 🛡️ سیکیورٹی ڈیلے (ڈیٹا لوڈ کرنے سے پہلے ایک چیک)
+    const timer = setTimeout(() => setIsShieldActive(false), 1500);
 
-    const interval = setInterval(fetchSecurityLogs, 10000);
-    return () => clearInterval(interval);
+    // فائر بیس سے لائیو لوکیشنز لینا
+    const unsubscribe = onSnapshot(collection(db, "live_locations"), (snapshot) => {
+      const locations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setActiveDrivers(locations);
+    });
+
+    return () => {
+        clearTimeout(timer);
+        unsubscribe();
+    };
   }, []);
 
-  return (
-    <div style={{ padding: '20px', backgroundColor: '#0a0a0a', color: '#00ff00', fontFamily: 'monospace' }}>
-      <h2>📡 Tezro Security Watchtower</h2>
-      <div style={{ border: '1px solid #00ff00', padding: '10px', marginBottom: '20px' }}>
-        <p>SYSTEM STATUS: <span style={{ color: systemStatus === "SECURE" ? "#00ff00" : "red" }}>{systemStatus}</span></p>
+  if (isShieldActive) {
+    return (
+      <div style={loaderStyle}>
+        <div className="spinner"></div>
+        <h2 style={{ color: '#FFD700', marginTop: '20px' }}>سیکیورٹی نیٹ ورک سے منسلک ہو رہا ہے...</h2>
       </div>
-      <h3>Live Security Logs:</h3>
-      <ul>
-        {logs.map(log => (
-          <li key={log.id}>[{log.time}] {log.origin}: {log.event} - <span style={{color: 'cyan'}}>Verified</span></li>
+    );
+  }
+
+  return (
+    <div style={{ height: '85vh', borderRadius: '20px', overflow: 'hidden', border: '2px solid #222' }}>
+      <div style={mapHeader}>
+        <h3 style={{ margin: 0 }}>لائیو ٹریکنگ: {activeDrivers.length} فعال ڈرائیورز</h3>
+        <span style={statusPulse}>لائیو ڈیٹا 📡</span>
+      </div>
+
+      <MapContainer center={[24.8607, 67.0011]} zoom={12} style={{ height: '100%', width: '100%' }}>
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; Tezro Security Maps'
+        />
+        
+        {activeDrivers.map((driver) => (
+          <Marker 
+            key={driver.id} 
+            position={[driver.lat, driver.lng]} 
+            icon={driverIcon}
+          >
+            <Popup>
+              <div style={{ direction: 'rtl', textAlign: 'right' }}>
+                <strong style={{ color: '#d4af37' }}>ڈرائیور: {driver.name}</strong><br />
+                اسٹیٹس: {driver.isOnline ? 'آن لائن ✅' : 'آف لائن ❌'}<br />
+                بیٹری: {driver.batteryLevel}%
+              </div>
+            </Popup>
+          </Marker>
         ))}
-      </ul>
+      </MapContainer>
     </div>
   );
 };
+
+// Styles
+const loaderStyle = { height: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#000' };
+const mapHeader = { background: '#111', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#FFD700', borderBottom: '1px solid #333' };
+const statusPulse = { fontSize: '12px', background: '#003300', color: '#00ff00', padding: '4px 12px', borderRadius: '15px', border: '1px solid #00ff00' };
 
 export default LivePerformance;
