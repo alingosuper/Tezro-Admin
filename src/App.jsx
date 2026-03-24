@@ -1,43 +1,59 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { auth } from './firebase'; 
+import { onAuthStateChanged } from 'firebase/auth';
 
-// 🛡️ سیکیورٹی اور مانیٹرنگ (Admin Side)
-import { startGhostMonitoring } from './security/GhostData';
-import { initSecurityShield } from './security/FinalSecurityShield';
-
-// 🔥 فائر بیس
-import * as FirebaseModule from './firebase';
-
-// 🖥️ ایڈمن اسکرینز
+// 🖥️ لے آؤٹ اور اسکرینز
+import AppShell from './AppShell';
 import AdminDashboard from './screens/Admin/AdminDashboard';
+import RegistrationRequests from './screens/Admin/RegistrationRequests';
 import LivePerformance from './screens/Admin/LivePerformance';
 import AdminLogin from './screens/Auth/AdminLogin';
 
-function App() {
+// 🔓 Developer Bypass Guard (بغیر لاگ ان کے جائزہ لینے کے لیے)
+const ProtectedRoute = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  // URL میں 'dev=true' چیک کریں
+  const isDevMode = new URLSearchParams(window.location.search).get('dev') === 'true';
+
   useEffect(() => {
-    try {
-      // 1. سیکیورٹی لیول ایکٹیویٹ کریں
-      initSecurityShield();
-
-      // 2. ایڈمن مانیٹرنگ انجن شروع کریں (پورے ایکو سسٹم کے لیے)
-      startGhostMonitoring("global_admin_mode");
-
-      console.log("🛡️ Tezro Admin: Command Center Active.");
-    } catch (error) {
-      console.error("Admin Security Bridge Error:", error);
-    }
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
+  if (loading) return <div style={{background:'#000', color:'#FFD700', height:'100vh', display:'flex', justifyContent:'center', alignItems:'center'}}>🛡️ Tezro Shield Loading...</div>;
+
+  // اگر Dev Mode آن ہے یا یوزر لاگ ان ہے، تو اندر جانے دیں
+  if (isDevMode || user) {
+    return children;
+  }
+
+  return <Navigate to="/admin/login" />;
+};
+
+function App() {
   return (
     <Router>
       <Routes>
-        {/* ایڈمن روٹس */}
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/live" element={<LivePerformance />} />
-        
-        {/* ڈیفالٹ روٹ ایڈمن ڈیش بورڈ پر جائے گا */}
-        <Route path="*" element={<AdminDashboard />} />
+
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AppShell />
+          </ProtectedRoute>
+        }>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="requests" element={<RegistrationRequests />} />
+          <Route path="live" element={<LivePerformance />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
       </Routes>
     </Router>
   );
