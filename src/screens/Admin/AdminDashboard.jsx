@@ -1,71 +1,37 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import { Shield, Zap, Globe, Cpu, Bell } from 'lucide-react';
-import L from 'leaflet';
-
-// مارکر آئیکن فکس
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-let DefaultIcon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
-L.Marker.prototype.options.icon = DefaultIcon;
+import AdminSidebar from '../../components/AdminSidebar';
 
 const AdminDashboard = () => {
   return (
-    <div style={{ backgroundColor: '#020202', color: '#fff', minHeight: '100vh', padding: '20px', fontFamily: 'sans-serif' }}>
+    <div style={{ display: 'flex', background: '#000', minHeight: '100vh', direction: 'rtl' }}>
+      <AdminSidebar />
       
-      {/* Golden Header */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1a1a1a', paddingBottom: '15px', marginBottom: '25px' }}>
-        <div>
-          <h1 style={{ color: '#FFD700', margin: 0, letterSpacing: '2px' }}>TEZRO COMMAND</h1>
-          <span style={{ color: '#555', fontSize: '0.7rem' }}>V 1.0.4 - SECURE INSTANCE</span>
-        </div>
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-          <div style={badge}><span style={dot}></span> LIVE MONITORING</div>
-        </div>
-      </header>
+      <div style={{ marginRight: '260px', flex: 1, padding: '30px' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 style={{ color: '#FFD700' }}>سسٹم اسٹیٹس (Stats)</h1>
+          <div style={statusBadge}>سسٹم لائیو 🟢</div>
+        </header>
 
-      {/* Control Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1fr', gap: '20px' }}>
-        
-        {/* Map Section */}
-        <div style={{ borderRadius: '15px', overflow: 'hidden', border: '1px solid #1a1a1a' }}>
-          <div style={panelHeader}>🌐 GLOBAL FLEET TRACKER</div>
-          <MapContainer center={[24.8607, 67.0011]} zoom={12} style={{ height: '500px', width: '100%', filter: 'invert(100%) hue-rotate(180deg) brightness(95%)' }}>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <Marker position={[24.8607, 67.0011]}>
-              <Popup>Command Center Karachi</Popup>
-            </Marker>
-          </MapContainer>
+        {/* فوری اعداد و شمار (Stats Cards) */}
+        <div style={statsGrid}>
+          <div style={statCard}><h3>کل صارفین</h3><p>1,240</p></div>
+          <div style={statCard}><h3>نئی رجسٹریشنز</h3><p style={{color: '#FFD700'}}>12</p></div>
+          <div style={statCard}><h3>فعال رائیڈز</h3><p>45</p></div>
+          <div style={statCard}><h3>آج کی آمدنی</h3><p>Rs. 24,500</p></div>
         </div>
 
-        {/* Sidebar Info */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={statCard}><Zap size={16} color="#FFD700"/> <span>Drivers: 42 Active</span></div>
-          <div style={statCard}><Shield size={16} color="#00FF00"/> <span>System: Locked</span></div>
-          
-          <div style={logBox}>
-            <div style={panelHeader}><Bell size={12}/> SYSTEM LOGS</div>
-            <div style={{ padding: '15px', fontSize: '0.7rem', color: '#888', fontFamily: 'monospace' }}>
-              <p style={{color: '#00FF00'}}>[OK] Firebase Connected</p>
-              <p>[INFO] Tezro-Web Repo Synced</p>
-              <p>[INFO] GhostData Shield: ON</p>
-              <p style={{color: '#FFD700'}}>[WARN] Map Instance Loaded</p>
-            </div>
-          </div>
-          
-          <button style={goldBtn}>Emergency Shutdown</button>
+        <div style={infoBox}>
+          <h2 style={{ color: '#FFD700' }}>AI الرٹس 🤖</h2>
+          <p>تمام سیکیورٹی شیلڈز نارمل کام کر رہی ہیں۔ 12 نئی رجسٹریشنز تصدیق کی منتظر ہیں۔</p>
         </div>
       </div>
     </div>
   );
 };
 
-const badge = { background: '#111', padding: '5px 12px', borderRadius: '15px', fontSize: '0.7rem', border: '1px solid #222', display: 'flex', alignItems: 'center', gap: '8px' };
-const dot = { width: '6px', height: '6px', borderRadius: '50%', background: '#00FF00' };
-const statCard = { background: '#0a0a0a', padding: '15px', borderRadius: '10px', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' };
-const logBox = { background: '#050505', border: '1px solid #1a1a1a', borderRadius: '10px', flex: 1 };
-const panelHeader = { background: '#0a0a0a', padding: '10px 15px', fontSize: '0.7rem', color: '#FFD700', fontWeight: 'bold', borderBottom: '1px solid #1a1a1a' };
-const goldBtn = { background: 'transparent', color: '#FF4444', border: '1px solid #FF4444', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' };
+const statsGrid = { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginTop: '30px' };
+const statCard = { background: '#111', padding: '20px', borderRadius: '15px', border: '1px solid #222', textAlign: 'center', color: '#fff' };
+const statusBadge = { background: '#002200', color: '#00ff00', padding: '5px 15px', borderRadius: '20px', fontSize: '12px', border: '1px solid #00ff00' };
+const infoBox = { marginTop: '40px', padding: '25px', background: '#0a0a0a', borderRadius: '20px', border: '1px dashed #FFD700', color: '#ccc' };
 
 export default AdminDashboard;
