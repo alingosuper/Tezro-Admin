@@ -1,58 +1,38 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { auth } from './firebase'; 
-import { onAuthStateChanged } from 'firebase/auth';
 
-// 🖥️ لے آؤٹ اور اسکرینز
+// سیکیورٹی انجن
+import { startGhostMonitoring } from './security/GhostData';
+import { initSecurityShield } from './security/FinalSecurityShield';
+
+// لے آؤٹ اور اسکرینز
 import AppShell from './AppShell';
 import AdminDashboard from './screens/Admin/AdminDashboard';
 import RegistrationRequests from './screens/Admin/RegistrationRequests';
 import LivePerformance from './screens/Admin/LivePerformance';
 import AdminLogin from './screens/Auth/AdminLogin';
 
-// 🔓 Developer Bypass Guard (بغیر لاگ ان کے جائزہ لینے کے لیے)
-const ProtectedRoute = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  
-  // URL میں 'dev=true' چیک کریں
-  const isDevMode = new URLSearchParams(window.location.search).get('dev') === 'true';
-
+function App() {
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-    return () => unsubscribe();
+    initSecurityShield();
+    startGhostMonitoring("global_admin_mode");
   }, []);
 
-  if (loading) return <div style={{background:'#000', color:'#FFD700', height:'100vh', display:'flex', justifyContent:'center', alignItems:'center'}}>🛡️ Tezro Shield Loading...</div>;
-
-  // اگر Dev Mode آن ہے یا یوزر لاگ ان ہے، تو اندر جانے دیں
-  if (isDevMode || user) {
-    return children;
-  }
-
-  return <Navigate to="/admin/login" />;
-};
-
-function App() {
   return (
     <Router>
       <Routes>
+        {/* لاگ ان پیج */}
         <Route path="/admin/login" element={<AdminLogin />} />
 
-        <Route path="/admin" element={
-          <ProtectedRoute>
-            <AppShell />
-          </ProtectedRoute>
-        }>
+        {/* تمام ایڈمن پیجز ایپ شیل کے اندر */}
+        <Route path="/admin" element={<AppShell />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="requests" element={<RegistrationRequests />} />
           <Route path="live" element={<LivePerformance />} />
         </Route>
 
+        {/* ڈیفالٹ ری ڈائریکٹ */}
         <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
       </Routes>
     </Router>
