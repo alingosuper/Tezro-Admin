@@ -1,21 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../../firebase';
+import { auth, db } from '../../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import * as faceapi from 'face-api.js';
+import { loadModels, compareFaces } from '../../utils/AIFaceMatcher';
 
 const AdminLogin = () => {
-  const [step, setStep] = useState(1); // 1: Email, 2: Security Check, 3: Success
+  const [step, setStep] = useState(1); // 1: Geo-Location, 2: PIN, 3: Face ID
   const [creds, setCreds] = useState({ email: '', pass: '', pin: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [faceDescriptor, setFaceDescriptor] = useState(null);
+  const [adminDescriptor, setAdminDescriptor] = useState(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const navigate = useNavigate();
 
-  // 🌍 45km Geo-Fence Check (Faisalabad Center Example)
+  // 🌍 45km Geo-Fence Faisalabad Center
   const checkLocation = () => {
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition((pos) => {
-        const center = { lat: 31.4504, lng: 73.1350 }; // فیصل آباد سینٹر
-        const R = 6371; // زمین کا رداس
+        const center = { lat: 31.4504, lng: 73.1350 }; 
+        const R = 6371; // زمین کا رداس (km)
         const dLat = (pos.coords.latitude - center.lat) * Math.PI / 180;
         const dLon = (pos.coords.longitude - center.lng) * Math.PI / 180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -26,6 +33,29 @@ const AdminLogin = () => {
         resolve(distance <= 45); // اگر 45 کلومیٹر کے اندر ہے تو true
       }, () => resolve(false));
     });
+  };
+
+  const startVideo = () => {
+    navigator.mediaDevices.getUserMedia({ video: {} })
+      .then(stream => {
+        videoRef.current.srcObject = stream;
+      })
+      .catch(err => console.error("Camera access error:", err));
+  };
+
+  const handleVideoOnPlay = () => {
+    setInterval(async () => {
+      if (step === 3 && videoRef.current) {
+        const detections = await faceapi.detectSingleFace(videoRef.current, new faceapi.SsdMobilenetv1Options())
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+        
+        if (detections) {
+          setFaceDescriptor(detections.descriptor);
+          console.log("Face Descriptor:", detections.descriptor);
+        }
+      }
+    }, 100);
   };
 
   const handleLogin = async (e) => {
@@ -53,17 +83,57 @@ const AdminLogin = () => {
 
   const finalVerify = () => {
     if (creds.pin === "4545") { // آپ کا سیکیورٹی پن
-      navigate('/admin/dashboard');
+      setStep(3);
+      startVideo();
     } else {
       setError("غلط سیکیورٹی پن!");
     }
   };
 
+  const verifyFace = async () => {
+    setLoading(true);
+    setError('');
+
+    if (faceDescriptor && adminDescriptor) {
+      const distance = faceapi.euclideanDistance(faceDescriptor, adminDescriptor);
+      const matchPercentage = Math.round((1 - distance) * 100);
+      
+      if (matchPercentage > 85) {
+        navigate('/admin/dashboard');
+      } else {
+        setError("❌ سیکیورٹی الرٹ: چہرہ میچ نہیں ہوا۔ رسائی ممنوع ہے!");
+      }
+    } else {
+      setError("کیمرے میں چہرہ صحیح طرح نظر نہیں آ رہا!");
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    const loadFaceModels = async () => {
+      try {
+        await loadModels(); // AI ماڈلز لوڈ کریں
+      } catch (error) {
+        console.error("AI Models load error:", error);
+      }
+    };
+    loadFaceModels();
+
+    const fetchAdminDescriptor = async () => {
+      const docRef = doc(db, 'registrations', 'faisalabad_admin');
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setAdminDescriptor(new Float32Array(Object.values(docSnap.data().face_data)));
+      }
+    };
+    fetchAdminDescriptor();
+  }, []);
+
   return (
     <div style={containerStyle}>
       <div style={loginBox}>
         <h2 style={{color: '#FFD700'}}>🛡️ Tezro Security Login</h2>
-        <p style={{fontSize: '10px', color: '#888'}}>Location-Locked | Encrypted</p>
+        <p style={{fontSize: '10px', color: '#888'}}>Location-Locked | PIN | Face ID | Encrypted</p>
         
         {error && <div style={errorStyle}>{error}</div>}
 
@@ -75,11 +145,20 @@ const AdminLogin = () => {
               {loading ? "Checking Location..." : "Verify Identity"}
             </button>
           </form>
-        ) : (
+        ) : step === 2 ? (
           <div>
             <p style={{color: '#00ff00'}}>✅ لوکیشن کنفرم! اب پن کوڈ درج کریں:</p>
             <input type="password" placeholder="4-Digit Security PIN" onChange={e => setCreds({...creds, pin: e.target.value})} style={inputStyle} maxLength="4" />
-            <button onClick={finalVerify} style={btnStyle}>Unlock Dashboard 🔓</button>
+            <button onClick={finalVerify} style={btnStyle}>Unlock PIN 🔓</button>
+          </div>
+        ) : (
+          <div>
+            <p style={{color: '#00ff00'}}>✅ لوکیشن اور پن کوڈ کنفرم! اب چہرہ تصدیق کریں:</p>
+            <video ref={videoRef} onPlay={handleVideoOnPlay} autoPlay muted style={videoStyle} />
+            <canvas ref={canvasRef} style={canvasStyle} />
+            <button onClick={verifyFace} disabled={loading} style={btnStyle}>
+              {loading ? "AI Checking..." : "Verify Face ID 🛡️"}
+            </button>
           </div>
         )}
       </div>
@@ -93,5 +172,7 @@ const loginBox = { background: '#111', padding: '30px', borderRadius: '20px', bo
 const inputStyle = { width: '100%', padding: '12px', margin: '10px 0', background: '#222', border: '1px solid #333', color: '#fff', borderRadius: '8px' };
 const btnStyle = { width: '100%', padding: '15px', background: '#FFD700', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' };
 const errorStyle = { color: '#ff4444', fontSize: '12px', marginBottom: '10px', background: 'rgba(255,0,0,0.1)', padding: '5px' };
+const videoStyle = { width: '100px', height: '100px', borderRadius: '50%', border: '4px solid #FFD700', objectFit: 'cover' };
+const canvasStyle = { position: 'absolute', top: '10px', left: '10px' };
 
 export default AdminLogin;
