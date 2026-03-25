@@ -47,7 +47,7 @@ const LivePerformance = () => {
         <span style={statusPulse}>لائیو ڈیٹا 📡</span>
       </div>
 
-      <MapContainer center={[24.8607, 67.0011]} zoom={12} style={{ height: '100%', width: '100%' }}>
+      <MapContainer center={[31.4504, 73.1350]} zoom={12} style={{ height: '100%', width: '100%' }}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; Tezro Security Maps'
