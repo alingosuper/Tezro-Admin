@@ -1,38 +1,62 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { auth } from './firebase'; 
+import { onAuthStateChanged } from 'firebase/auth';
 
-// سیکیورٹی انجن
-import { startGhostMonitoring } from './security/GhostData';
-import { initSecurityShield } from './security/FinalSecurityShield';
-
-// لے آؤٹ اور اسکرینز
+// 🖥️ لے آؤٹ اور اسکرینز
 import AppShell from './AppShell';
 import AdminDashboard from './screens/Admin/AdminDashboard';
 import RegistrationRequests from './screens/Admin/RegistrationRequests';
 import LivePerformance from './screens/Admin/LivePerformance';
 import AdminLogin from './screens/Auth/AdminLogin';
 
-function App() {
+// 🔓 Developer Bypass Guard
+const ProtectedRoute = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  // 🔑 خفیہ بائی پاس کی (صرف آپ کے لیے)
+  const isBypassActive = new URLSearchParams(window.location.search).get('access') === 'Tezro_Dev_99';
+
   useEffect(() => {
-    initSecurityShield();
-    startGhostMonitoring("global_admin_mode");
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
+  if (loading && !isBypassActive) return (
+    <div style={{background:'#000', color:'#FFD700', height:'100vh', display:'flex', justifyContent:'center', alignItems:'center', fontFamily:'sans-serif'}}>
+       🛡️ Tezro Security Shield Active...
+    </div>
+  );
+
+  // اگر بائی پاس ایکٹو ہے یا یوزر لاگ ان ہے
+  if (isBypassActive || user) {
+    return children;
+  }
+
+  return <Navigate to="/admin/login" />;
+};
+
+function App() {
   return (
     <Router>
       <Routes>
-        {/* لاگ ان پیج */}
         <Route path="/admin/login" element={<AdminLogin />} />
 
-        {/* تمام ایڈمن پیجز ایپ شیل کے اندر */}
-        <Route path="/admin" element={<AppShell />}>
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AppShell />
+          </ProtectedRoute>
+        }>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="requests" element={<RegistrationRequests />} />
           <Route path="live" element={<LivePerformance />} />
         </Route>
 
-        {/* ڈیفالٹ ری ڈائریکٹ */}
         <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
       </Routes>
     </Router>
