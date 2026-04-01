@@ -2,108 +2,68 @@ import React, { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 
 const AppShell = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
-  // 🛡️ سیکیورٹی پاس ورڈز کی ترتیب (مثال)
-  const [securityConfig, setSecurityConfig] = useState({
-    geoFencing: false,
-    fingerprint: false,
-    rootPassword: '',
-  });
-
-  const menuItems = [
-    { name: 'ڈیش بورڈ (Stats)', icon: '📊', path: '/admin/dashboard' },
-    { name: 'رجسٹریشن (AI)', icon: '👥', path: '/admin/requests' },
-    { name: 'لائیو (Maps)', icon: '🛰️', path: '/admin/live' },
-  ];
-
-  const settingItems = [
-    { name: 'جیو فینسنگ', icon: '📍', key: 'geoFencing' },
-    { name: 'فنگر پرنٹ', icon: '☝️', key: 'fingerprint' },
-    { name: 'پاس ورڈ ترتیب', icon: '🔐', key: 'rootPassword' },
-  ];
+  const shinyGoldBtn = {
+    background: 'linear-gradient(135deg, #000 0%, #1a1a1a 100%)',
+    color: '#D4AF37',
+    border: '1px solid #D4AF37',
+    padding: '12px',
+    borderRadius: '12px',
+    marginBottom: '10px',
+    cursor: 'pointer',
+    boxShadow: '0 0 10px rgba(212, 175, 55, 0.2)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    fontSize: '14px',
+    transition: '0.3s'
+  };
 
   return (
-    <div style={containerStyle}>
-      {/* 🏰 100% Folding Sidebar (All Golden Shiny Buttons Inside) */}
+    <div style={{ height: '100vh', background: '#000', display: 'flex', flexDirection: 'column' }}>
+      {/* 🔝 Premium Header */}
+      <header style={headerStyle}>
+        <button onClick={() => setIsSidebarOpen(true)} style={navBtnStyle}>☰</button>
+        <div style={logoContainer}>
+          <div style={glowEffect}></div>
+          <img src="/logo.png" style={logoImg} alt="Logo" />
+        </div>
+        <button style={navBtnStyle}>🔔<span style={badge}>2</span></button>
+      </header>
+
+      {/* 🏰 Overlapping Sidebar (Fix: Opens OVER the map) */}
+      {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} style={overlayStyle} />}
       <div style={sidebarStyle(isSidebarOpen)}>
-        <div style={{ padding: '20px', borderBottom: '1px solid #D4AF3722', marginBottom: '20px' }}>
-          <div style={{ fontSize: '20px', textAlign: 'center', filter: 'drop-shadow(0 0 5px #D4AF37)' }}>⚜️ TEZRO ALIVE</div>
+        <div style={{padding: '20px', textAlign: 'center', borderBottom: '1px solid #D4AF3744'}}>
+          <h3 style={{color: '#D4AF37', margin: 0}}>TEZRO ADMIN</h3>
         </div>
-        
-        {/* Main Menu */}
-        {menuItems.map(item => (
-          <div key={item.path} onClick={() => { navigate(item.path); setIsSidebarOpen(false); }} style={shinyMenuItemStyle}>
-            <span>{item.icon}</span>
-            <span style={{ flex: 1, textAlign: 'right' }}>{item.name} ✨</span>
-          </div>
-        ))}
-
-        {/* ⚙️ Setting Menu (with Security Configuration) */}
-        <div style={settingGroupStyle}>
-          <div style={settingHeaderStyle}>سیٹنگز CONTROL ⋮</div>
-          {settingItems.map(item => (
-            <div key={item.key} style={subItemStyle}>
-              <span>{item.icon} {item.name}</span>
-              <input 
-                type={item.key === 'rootPassword' ? 'password' : 'checkbox'} 
-                checked={item.key !== 'rootPassword' ? securityConfig[item.key] : undefined}
-                onChange={(e) => setSecurityConfig({...securityConfig, [item.key]: item.key === 'rootPassword' ? e.target.value : e.target.checked})}
-                style={item.key === 'rootPassword' ? inputStyle : checkboxStyle}
-                placeholder={item.key === 'rootPassword' ? 'نیا پاس ورڈ' : undefined}
-              />
-            </div>
-          ))}
-          <button style={saveSecurityBtnStyle} onClick={() => alert('🔐 Security Settings Saved to Tezro Core!')}>محفوظ کریں</button>
-        </div>
-
-        <div style={{ marginTop: 'auto', padding: '15px', color: '#666', fontSize: '12px', textAlign: 'center', borderTop: '1px solid #111' }}>
-          🚪 Safe Sign Out
+        <div style={{padding: '15px'}}>
+          <div style={shinyGoldBtn} onClick={() => navigate('/admin/dashboard')}>📊 STATS DASHBOARD</div>
+          <div style={shinyGoldBtn} onClick={() => navigate('/admin/requests')}>👥 REGISTRATION AI</div>
+          <div style={shinyGoldBtn} onClick={() => navigate('/admin/live')}>🛰️ LIVE MONITORING</div>
+          
+          <div style={{marginTop: '20px', color: '#888', fontSize: '12px'}}>SECURITY CONTROL</div>
+          <div style={shinyGoldBtn}>📍 GEO-FENCING</div>
+          <div style={shinyGoldBtn}>☝️ FINGERPRINT</div>
         </div>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* 🔝 Elite Header */}
-        <header style={headerStyle}>
-          {/* Left: 3 Lines Button */}
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} style={threeLinesBtnStyle}>☰</button>
-          
-          {/* Center: Golden Shiny Logo */}
-          <div style={logoWrapperStyle}>
-            <div style={logoGlowCircle} />
-            <img src="/logo.png" alt="Tezro Logo" style={logoStyle} />
-          </div>
-          
-          {/* Right: Notification Bell */}
-          <button onClick={() => alert('🔔 Security Alerts Open')} style={notifBellBtnStyle}>🔔 <span style={notifBadgeStyle}>2</span></button>
-        </header>
-
-        {/* 🖥️ Main Content Area */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          <Outlet />
-        </div>
-      </div>
+      <main style={{ flex: 1, position: 'relative' }}>
+        <Outlet />
+      </main>
     </div>
   );
 };
 
-// 🎨 Styles (گولڈن شائینی تھیم کے مطابق)
-const containerStyle = { display: 'flex', height: '100vh', background: '#000', color: '#D4AF37', overflow: 'hidden', fontFamily: 'sans-serif' };
-const sidebarStyle = (isOpen) => ({ width: isOpen ? '280px' : '0', background: '#050505', borderRight: '1px solid #D4AF3722', display: 'flex', flexDirection: 'column', transition: 'width 0.3s ease-in-out', overflow: 'hidden' });
-const headerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0a0a0a', borderBottom: '1px solid #D4AF3722', padding: '10px 20px', zIndex: 1000 };
-const shinyMenuItemStyle = { background: '#111', color: '#D4AF37', border: '1px solid #D4AF3744', padding: '12px 15px', borderRadius: '12px', fontSize: '13px', cursor: 'pointer', transition: '0.3s', display: 'flex', alignItems: 'center', boxShadow: '0 0 10px rgba(212, 175, 55, 0.1)', marginBottom: '8px' };
-const threeLinesBtnStyle = { background: 'transparent', color: '#D4AF37', border: 'none', fontSize: '24px', cursor: 'pointer' };
-const notifBellBtnStyle = { background: 'transparent', color: '#D4AF37', border: 'none', fontSize: '20px', cursor: 'pointer', position: 'relative' };
-const notifBadgeStyle = { position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', fontSize: '8px', padding: '3px', borderRadius: '50%' };
-const logoWrapperStyle = { position: 'relative', height: '40px', width: '40px' };
-const logoStyle = { height: '100%', width: '100%', objectFit: 'contain', filter: 'drop-shadow(0 0 5px #D4AF37)' };
-const logoGlowCircle = { position: 'absolute', top: '-10px', left: '-10px', right: '-10px', bottom: '-10px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, rgba(0,0,0,0) 70%)', boxShadow: '0 0 20px rgba(212, 175, 55, 0.2)' };
-const settingGroupStyle = { background: '#0a0a0a', padding: '15px', borderRadius: '15px', border: '1px solid #1a1a1a', marginTop: '20px' };
-const settingHeaderStyle = { color: '#ccc', fontSize: '11px', marginBottom: '10px', borderBottom: '1px solid #222', paddingBottom: '5px' };
-const subItemStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#aaa', padding: '5px 0' };
-const checkboxStyle = { accentColor: '#D4AF37', cursor: 'pointer' };
-const inputStyle = { background: '#111', border: '1px solid #333', color: 'white', padding: '5px', borderRadius: '5px', width: '100px', fontSize: '10px' };
-const saveSecurityBtnStyle = { background: 'linear-gradient(45deg, #D4AF37 0%, #F5D76E 100%)', color: '#000', border: 'none', padding: '8px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', width: '100%', marginTop: '10px', cursor: 'pointer' };
+const headerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 20px', background: '#050505', borderBottom: '2px solid #D4AF3722', zIndex: 100 };
+const navBtnStyle = { background: 'none', border: 'none', color: '#D4AF37', fontSize: '24px', cursor: 'pointer' };
+const logoContainer = { position: 'relative', width: '50px', height: '50px' };
+const logoImg = { width: '100%', height: '100%', zIndex: 2, position: 'relative', filter: 'drop-shadow(0 0 5px #D4AF37)' };
+const glowEffect = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: '#D4AF37', borderRadius: '50%', filter: 'blur(15px)', opacity: 0.3 };
+const sidebarStyle = (isOpen) => ({ position: 'fixed', top: 0, left: isOpen ? 0 : '-300px', width: '280px', height: '100%', background: '#050505', zIndex: 9999, transition: '0.4s cubic-bezier(0.4, 0, 0.2, 1)', borderRight: '2px solid #D4AF3744', boxShadow: '10px 0 30px rgba(0,0,0,0.9)' });
+const overlayStyle = { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', zIndex: 9998, backdropFilter: 'blur(3px)' };
+const badge = { position: 'absolute', top: '10px', background: 'red', color: 'white', borderRadius: '50%', padding: '2px 5px', fontSize: '10px' };
 
 export default AppShell;
