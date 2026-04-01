@@ -1,37 +1,53 @@
-import React from 'react';
-import AdminSidebar from '../../components/AdminSidebar';
+import React, { useState } from 'react';
+// ہم نے پاتھ کو پکا کر دیا ہے تاکہ Vite کو ایرر نہ ملے
+import TezroMap from '../../components/Dashboard/TezroMap.jsx';
 
 const AdminDashboard = () => {
-  return (
-    <div style={{ display: 'flex', background: '#000', minHeight: '100vh', direction: 'rtl' }}>
-      <AdminSidebar />
-      
-      <div style={{ marginRight: '260px', flex: 1, padding: '30px' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 style={{ color: '#FFD700' }}>سسٹم اسٹیٹس (Stats)</h1>
-          <div style={statusBadge}>سسٹم لائیو 🟢</div>
-        </header>
+  const [showRates, setShowRates] = useState(false);
 
-        {/* فوری اعداد و شمار (Stats Cards) */}
-        <div style={statsGrid}>
-          <div style={statCard}><h3>کل صارفین</h3><p>1,240</p></div>
-          <div style={statCard}><h3>نئی رجسٹریشنز</h3><p style={{color: '#FFD700'}}>12</p></div>
-          <div style={statCard}><h3>فعال رائیڈز</h3><p>45</p></div>
-          <div style={statCard}><h3>آج کی آمدنی</h3><p>Rs. 24,500</p></div>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '90vh', gap: '15px', color: '#fff' }}>
+      
+      {/* 🔝 Top Buttons (Admin Power Controls) */}
+      <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+        <button onClick={() => alert('ریٹس کنٹرول اوپن')} style={topBtnStyle}>💹 ریٹس</button>
+        <button onClick={() => alert('کمشن کنٹرول اوپن')} style={topBtnStyle}>💰 کمشن</button>
+        <button style={topBtnStyle}>🛡️ الرٹس</button>
+      </div>
+
+      <div style={{ display: 'flex', flex: 1, gap: '15px', overflow: 'hidden' }}>
+        
+        {/* 🚨 Notifications */}
+        <div style={sidePanelStyle}>
+          <h3 style={headerStyle}>THREATS ⚠️</h3>
+          <div style={alertItemStyle("#ff4444")}>Unauthorized login attempt</div>
+          <div style={alertItemStyle("#D4AF37")}>New High Value Transaction</div>
         </div>
 
-        <div style={infoBox}>
-          <h2 style={{ color: '#FFD700' }}>AI الرٹس 🤖</h2>
-          <p>تمام سیکیورٹی شیلڈز نارمل کام کر رہی ہیں۔ 12 نئی رجسٹریشنز تصدیق کی منتظر ہیں۔</p>
+        {/* 🗺️ Massive Center Map */}
+        <div style={{ flex: 3, background: '#000', borderRadius: '20px', position: 'relative' }}>
+          <TezroMap />
+        </div>
+
+        {/* ⚙️ System Controls */}
+        <div style={sidePanelStyle}>
+          <h3 style={headerStyle}>MASTER CONTROL</h3>
+          <button style={controlBtnStyle}>LOCK ALL 🔐</button>
+          <button style={controlBtnStyle}>REBOOT ⚡</button>
+          <div style={{marginTop: 'auto', textAlign: 'center'}}>
+             <small style={{color: '#444'}}>CPU: 12% | RAM: 40%</small>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-const statsGrid = { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginTop: '30px' };
-const statCard = { background: '#111', padding: '20px', borderRadius: '15px', border: '1px solid #222', textAlign: 'center', color: '#fff' };
-const statusBadge = { background: '#002200', color: '#00ff00', padding: '5px 15px', borderRadius: '20px', fontSize: '12px', border: '1px solid #00ff00' };
-const infoBox = { marginTop: '40px', padding: '25px', background: '#0a0a0a', borderRadius: '20px', border: '1px dashed #FFD700', color: '#ccc' };
+// Styles
+const sidePanelStyle = { flex: 0.8, background: '#050505', borderRadius: '20px', border: '1px solid #1a1a1a', padding: '15px', display: 'flex', flexDirection: 'column', gap: '10px' };
+const headerStyle = { color: '#D4AF37', fontSize: '12px', textAlign: 'center', borderBottom: '1px solid #111', paddingBottom: '10px' };
+const topBtnStyle = { background: '#111', color: '#D4AF37', border: '1px solid #D4AF3744', padding: '10px 20px', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold' };
+const controlBtnStyle = { background: '#111', color: '#fff', border: '1px solid #222', padding: '10px', borderRadius: '10px', cursor: 'pointer', fontSize: '11px' };
+const alertItemStyle = (color) => ({ fontSize: '10px', padding: '8px', borderRadius: '8px', background: '#000', borderLeft: '3px solid ' + color, color: '#888' });
 
 export default AdminDashboard;

@@ -1,81 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import { db } from '../../firebase';
-import { collection, onSnapshot } from 'firebase/firestore';
-import L from 'leaflet';
-
-// کسٹم مارکر آئیکن (ڈرائیور کے لیے)
-const driverIcon = new L.Icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854184.png',
-    iconSize: [35, 35],
-});
+import React from 'react';
 
 const LivePerformance = () => {
-  const [activeDrivers, setActiveDrivers] = useState([]);
-  const [isShieldActive, setIsShieldActive] = useState(true);
-
-  useEffect(() => {
-    // 🛡️ سیکیورٹی ڈیلے (ڈیٹا لوڈ کرنے سے پہلے ایک چیک)
-    const timer = setTimeout(() => setIsShieldActive(false), 1500);
-
-    // فائر بیس سے لائیو لوکیشنز لینا
-    const unsubscribe = onSnapshot(collection(db, "live_locations"), (snapshot) => {
-      const locations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setActiveDrivers(locations);
-    });
-
-    return () => {
-        clearTimeout(timer);
-        unsubscribe();
-    };
-  }, []);
-
-  if (isShieldActive) {
-    return (
-      <div style={loaderStyle}>
-        <div className="spinner"></div>
-        <h2 style={{ color: '#FFD700', marginTop: '20px' }}>سیکیورٹی نیٹ ورک سے منسلک ہو رہا ہے...</h2>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ height: '85vh', borderRadius: '20px', overflow: 'hidden', border: '2px solid #222' }}>
-      <div style={mapHeader}>
-        <h3 style={{ margin: 0 }}>لائیو ٹریکنگ: {activeDrivers.length} فعال ڈرائیورز</h3>
-        <span style={statusPulse}>لائیو ڈیٹا 📡</span>
+    <div style={{ animation: 'fadeIn 0.5s ease-in' }}>
+      <h1 style={{ color: '#D4AF37', fontWeight: '300', marginBottom: '25px', fontSize: '22px', textAlign: 'right' }}>لائیو مانیٹرنگ (Maps)</h1>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+        <div style={pulseBoxStyle}>
+          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+             <span style={{color: '#44ff44'}}>● System Normal</span>
+             <h3 style={{color: '#D4AF37', margin: 0, fontSize: '16px'}}>Global Traffic</h3>
+          </div>
+          <div style={{fontSize: '32px', color: '#fff', fontWeight: 'bold', margin: '15px 0', textAlign: 'right'}}>1.2 GB/s</div>
+        </div>
+        
+        <div style={pulseBoxStyle}>
+          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+             <span style={{color: '#D4AF37'}}>🛡️ Encrypted</span>
+             <h3 style={{color: '#D4AF37', margin: 0, fontSize: '16px'}}>Security Shield</h3>
+          </div>
+          <div style={{fontSize: '32px', color: '#fff', fontWeight: 'bold', margin: '15px 0', textAlign: 'right'}}>ACTIVE</div>
+        </div>
       </div>
 
-      <MapContainer center={[31.4504, 73.1350]} zoom={12} style={{ height: '100%', width: '100%' }}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; Tezro Security Maps'
-        />
-        
-        {activeDrivers.map((driver) => (
-          <Marker 
-            key={driver.id} 
-            position={[driver.lat, driver.lng]} 
-            icon={driverIcon}
-          >
-            <Popup>
-              <div style={{ direction: 'rtl', textAlign: 'right' }}>
-                <strong style={{ color: '#d4af37' }}>ڈرائیور: {driver.name}</strong><br />
-                اسٹیٹس: {driver.isOnline ? 'آن لائن ✅' : 'آف لائن ❌'}<br />
-                بیٹری: {driver.batteryLevel}%
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+      <div style={{marginTop: '20px', background: '#0a0a0a', padding: '30px', borderRadius: '15px', border: '1px solid #1a1a1a', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.3)'}}>
+         <p style={{color: '#444', fontSize: '12px'}}>[ Real-time Graph Placeholder - Elite Graphics Coming Soon... ]</p>
+         <div style={{height: '120px', borderBottom: '1px solid #D4AF37', margin: '20px 0', opacity: 0.2}}></div>
+      </div>
     </div>
   );
 };
 
-// Styles
-const loaderStyle = { height: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#000' };
-const mapHeader = { background: '#111', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#FFD700', borderBottom: '1px solid #333' };
-const statusPulse = { fontSize: '12px', background: '#003300', color: '#00ff00', padding: '4px 12px', borderRadius: '15px', border: '1px solid #00ff00' };
+const pulseBoxStyle = {
+  background: 'rgba(255,255,255,0.01)', backdropFilter: 'blur(10px)',
+  padding: '20px', borderRadius: '15px', border: '1px solid #1a1a1a',
+  boxShadow: '0 10px 20px rgba(0,0,0,0.2)'
+};
 
 export default LivePerformance;
