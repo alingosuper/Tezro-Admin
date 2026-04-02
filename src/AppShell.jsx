@@ -1,69 +1,81 @@
-import React, { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import React, { useState, Suspense, lazy } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+
+// Lazy Loading for Performance
+const WarRoom = lazy(() => import('./pages/Admin/WarRoom'));
+const RegistrationRequests = lazy(() => import('./pages/Admin/RegistrationRequests'));
 
 const AppShell = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const shinyGoldBtn = {
-    background: 'linear-gradient(135deg, #000 0%, #1a1a1a 100%)',
-    color: '#D4AF37',
-    border: '1px solid #D4AF37',
-    padding: '12px',
-    borderRadius: '12px',
-    marginBottom: '10px',
-    cursor: 'pointer',
-    boxShadow: '0 0 10px rgba(212, 175, 55, 0.2)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    fontSize: '14px',
-    transition: '0.3s'
-  };
+  const menuItems = [
+    { name: 'COMMAND CENTER', path: '/admin/war-room', icon: '🛰️' },
+    { name: 'KYC & REGISTRATION', path: '/admin/requests', icon: '👥' },
+    { name: 'FINANCIAL VAULT', path: '/admin/vault', icon: '💰' },
+    { name: 'FLEET CONTROL', path: '/admin/fleet', icon: '🚗' },
+    { name: 'SECURITY LOGS', path: '/admin/security', icon: '🔐' },
+  ];
 
   return (
-    <div style={{ height: '100vh', background: '#000', display: 'flex', flexDirection: 'column' }}>
-      {/* 🔝 Premium Header */}
+    <div style={container}>
+      {/* 🔝 Ultra-Light Header */}
       <header style={headerStyle}>
-        <button onClick={() => setIsSidebarOpen(true)} style={navBtnStyle}>☰</button>
-        <div style={logoContainer}>
-          <div style={glowEffect}></div>
-          <img src="/logo.png" style={logoImg} alt="Logo" />
+        <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
+          <button onClick={() => setIsOpen(true)} style={menuBtn}>☰</button>
+          <span style={brand}>TEZRO <span style={goldText}>ELITE</span></span>
         </div>
-        <button style={navBtnStyle}>🔔<span style={badge}>2</span></button>
+        <div style={systemStatus}>
+          <span style={statusDot}></span> SERVER: OPTIMAL
+        </div>
       </header>
 
-      {/* 🏰 Overlapping Sidebar (Fix: Opens OVER the map) */}
-      {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} style={overlayStyle} />}
-      <div style={sidebarStyle(isSidebarOpen)}>
-        <div style={{padding: '20px', textAlign: 'center', borderBottom: '1px solid #D4AF3744'}}>
-          <h3 style={{color: '#D4AF37', margin: 0}}>TEZRO ADMIN</h3>
+      {/* 🏰 Invisible Sidebar Overlay */}
+      {isOpen && <div onClick={() => setIsOpen(false)} style={overlay}></div>}
+      
+      <aside style={sidebarStyle(isOpen)}>
+        <div style={sideHeader}>NATIONAL CONTROL</div>
+        <div style={navLinks}>
+          {menuItems.map((item) => (
+            <div 
+              key={item.path}
+              onClick={() => { navigate(item.path); setIsOpen(false); }}
+              style={navItem(location.pathname === item.path)}
+            >
+              <span style={{fontSize: '18px'}}>{item.icon}</span>
+              {item.name}
+            </div>
+          ))}
         </div>
-        <div style={{padding: '15px'}}>
-          <div style={shinyGoldBtn} onClick={() => navigate('/admin/dashboard')}>📊 STATS DASHBOARD</div>
-          <div style={shinyGoldBtn} onClick={() => navigate('/admin/requests')}>👥 REGISTRATION AI</div>
-          <div style={shinyGoldBtn} onClick={() => navigate('/admin/live')}>🛰️ LIVE MONITORING</div>
-          
-          <div style={{marginTop: '20px', color: '#888', fontSize: '12px'}}>SECURITY CONTROL</div>
-          <div style={shinyGoldBtn}>📍 GEO-FENCING</div>
-          <div style={shinyGoldBtn}>☝️ FINGERPRINT</div>
-        </div>
-      </div>
+        <div style={footerNote}>v1.0.0-SECURE</div>
+      </aside>
 
-      <main style={{ flex: 1, position: 'relative' }}>
-        <Outlet />
+      {/* 🚀 Dynamic Content Area (Load on Demand) */}
+      <main style={mainContent}>
+        <Suspense fallback={<div style={loader}>INITIATING SECURE MODULE...</div>}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );
 };
 
-const headerStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 20px', background: '#050505', borderBottom: '2px solid #D4AF3722', zIndex: 100 };
-const navBtnStyle = { background: 'none', border: 'none', color: '#D4AF37', fontSize: '24px', cursor: 'pointer' };
-const logoContainer = { position: 'relative', width: '50px', height: '50px' };
-const logoImg = { width: '100%', height: '100%', zIndex: 2, position: 'relative', filter: 'drop-shadow(0 0 5px #D4AF37)' };
-const glowEffect = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: '#D4AF37', borderRadius: '50%', filter: 'blur(15px)', opacity: 0.3 };
-const sidebarStyle = (isOpen) => ({ position: 'fixed', top: 0, left: isOpen ? 0 : '-300px', width: '280px', height: '100%', background: '#050505', zIndex: 9999, transition: '0.4s cubic-bezier(0.4, 0, 0.2, 1)', borderRight: '2px solid #D4AF3744', boxShadow: '10px 0 30px rgba(0,0,0,0.9)' });
-const overlayStyle = { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', zIndex: 9998, backdropFilter: 'blur(3px)' };
-const badge = { position: 'absolute', top: '10px', background: 'red', color: 'white', borderRadius: '50%', padding: '2px 5px', fontSize: '10px' };
+// Styles for High Performance
+const container = { height: '100vh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff', overflow: 'hidden' };
+const headerStyle = { height: '60px', background: '#050505', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', borderBottom: '1px solid #D4AF3733' };
+const brand = { fontWeight: 'bold', letterSpacing: '2px', fontSize: '18px' };
+const goldText = { color: '#D4AF37' };
+const menuBtn = { background: 'none', border: 'none', color: '#D4AF37', fontSize: '24px', cursor: 'pointer' };
+const systemStatus = { fontSize: '10px', color: '#44ff44', border: '1px solid #44ff4444', padding: '4px 10px', borderRadius: '15px' };
+const statusDot = { height: '6px', width: '6px', background: '#44ff44', borderRadius: '50%', display: 'inline-block', marginRight: '5px', boxShadow: '0 0 5px #44ff44' };
+const sidebarStyle = (isOpen) => ({ position: 'fixed', left: isOpen ? 0 : '-300px', top: 0, width: '280px', height: '100%', background: '#050505', z : '9999', transition: '0.3s ease', borderRight: '1px solid #D4AF3744', display: 'flex', flexDirection: 'column' });
+const sideHeader = { padding: '30px 20px', fontSize: '14px', color: '#D4AF37', borderBottom: '1px solid #D4AF3722', textAlign: 'center', letterSpacing: '3px' };
+const navLinks = { padding: '20px', flex: 1 };
+const navItem = (active) => ({ padding: '15px', marginBottom: '10px', borderRadius: '10px', background: active ? 'rgba(212,175,55,0.1)' : 'transparent', color: active ? '#D4AF37' : '#888', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', fontSize: '12px', fontWeight: 'bold', border: active ? '1px solid #D4AF3744' : '1px solid transparent' });
+const overlay = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9998, backdropFilter: 'blur(3px)' };
+const mainContent = { flex: 1, overflow: 'auto', position: 'relative' };
+const footerNote = { padding: '20px', fontSize: '10px', color: '#333', textAlign: 'center' };
+const loader = { height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#D4AF37', fontSize: '12px', letterSpacing: '2px' };
 
 export default AppShell;
